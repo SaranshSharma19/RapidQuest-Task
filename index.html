@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Subtitler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        #subtitles {
+            margin-top: 10px;
+        }
+
+        #subtitleList {
+            list-style: none;
+            padding: 0;
+        }
+
+        .subtitleItem {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Video Subtitler</h1>
+
+    <input type="file" id="videoFile" accept="video/*" />
+    <br>
+    <textarea id="subtitleInput" placeholder="Add custom subtitle at specific timestamp"></textarea>
+    <button onclick="addSubtitle()">Add Subtitle</button>
+    
+    <video id="videoPlayer" controls></video>
+
+    <div id="subtitles">
+        <h2>Subtitles</h2>
+        <ul id="subtitleList"></ul>
+    </div>
+
+    <script>
+        let videoPlayer = document.getElementById('videoPlayer');
+        let videoFileInput = document.getElementById('videoFile');
+        let subtitleInput = document.getElementById('subtitleInput');
+        let subtitleList = document.getElementById('subtitleList');
+
+        videoFileInput.addEventListener('change', function () {
+            loadVideo();
+        });
+
+        function loadVideo() {
+            const file = videoFileInput.files[0];
+            const videoUrl = URL.createObjectURL(file);
+            videoPlayer.src = videoUrl;
+        }
+
+        function addSubtitle() {
+            const currentTime = videoPlayer.currentTime;
+            const subtitleText = subtitleInput.value.trim();
+
+            if (subtitleText !== '') {
+                const subtitleItem = document.createElement('li');
+                subtitleItem.classList.add('subtitleItem');
+                subtitleItem.innerText = `${formatTime(currentTime)} - ${subtitleText}`;
+
+                subtitleList.appendChild(subtitleItem);
+                subtitleInput.value = '';
+            }
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        videoPlayer.addEventListener('timeupdate', function () {
+            highlightCurrentSubtitle();
+        });
+
+        function highlightCurrentSubtitle() {
+            const currentTime = videoPlayer.currentTime;
+
+            for (const subtitleItem of subtitleList.children) {
+                const [startTime, endTime] = getSubtitleTimeRange(subtitleItem.innerText);
+                if (currentTime >= startTime && currentTime <= endTime) {
+                    subtitleItem.style.backgroundColor = 'yellow';
+                } else {
+                    subtitleItem.style.backgroundColor = '';
+                }
+            }
+        }
+
+        function getSubtitleTimeRange(subtitleText) {
+            const timePattern = /(\d+:\d+) - (\d+:\d+)/;
+            const matches = subtitleText.match(timePattern);
+            if (matches) {
+                const startTime = parseTime(matches[1]);
+                const endTime = parseTime(matches[2]);
+                return [startTime, endTime];
+            }
+            return [0, 0];
+        }
+
+        function parseTime(timeString) {
+            const [minutes, seconds] = timeString.split(':').map(Number);
+            return minutes * 60 + seconds;
+        }
+    </script>
+</body>
+</html>
